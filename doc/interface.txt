@@ -1,0 +1,124 @@
+
+
+-------------------------------------------------------------------------
+结构体
+-------------------------------------------------------------------------
+
+/* 交易签名数据
+ * config: 包含签名v和签名方法（各占以1个字节, 其它字节缺省）
+ * r: 签名r
+ * s: 签名s
+ * */
+struct OrderSignature {
+    bytes32 config;
+    bytes32 r;
+    bytes32 s;
+}
+
+/* 订单参数
+ * trader: taker 地址
+ * baseTokenAmount: 交易token的数量
+ * quoteTokenAmount: 报价token的数量
+ * gasTokenAmount: 交易费用token的数量，一般默认0
+ * data: 交易参数的设置, 包含hydro版本号、交易买卖标志等, 生成方式参见接口getConfigData
+ * signature: 交易签名数据, 包含签名的vrs, 以及签名方法, 生成方式参见接口 getConfigSignature
+ */
+struct OrderParam {
+    address trader;
+    uint256 baseTokenAmount;
+    uint256 quoteTokenAmount;
+    uint256 gasTokenAmount;
+    bytes32 data;
+    OrderSignature signature;
+}
+
+/* 订单地址集合
+ * baseToken: 交易token的合约地址
+ * quoteToken: 报价token的合约地址
+ * relayer: 交易费用接收账户地址
+ * */
+struct OrderAddressSet {
+    address baseToken;
+    address quoteToken;
+    address relayer;
+}
+
+
+/* 订单信息
+ * order: 订单参数
+ * filled: 订单匹配额(已匹配的交易token的数量)
+ * next: 该订单的下一个订单的哈希值
+ * */
+struct QueueElem {
+    OrderParam order;
+    uint256 filled;
+    bytes32 next;
+}
+
+-------------------------------------------------------------------------
+接口
+-------------------------------------------------------------------------
+
+/* 发起订单
+ * takerOrderParam: 订单参数
+ * orderAddressSet: 订单地址集合
+ * */
+function takeOrder(OrderParam takerOrderParam, OrderAddressSet orderAddressSet);
+
+/* 获取订单相关hash值
+ * orderParam: 订单参数
+ * orderAddressSet: 订单地址集合
+ *
+ * 返回值
+ * bq_hash: base-token/quote-token 哈希值
+ * od_hash: 订单哈希值
+ * */
+function getBQODHash(OrderParam orderParam, OrderAddressSet orderAddressSet);
+
+/* 获取订单信息
+ * bq_hash: base-token/quote-token 哈希值
+ * od_hash: 订单哈希值
+ * is_sell: true 为卖单，false为买单
+ *
+ * 返回值：
+ * 订单信息 QueueElem(参考该结构体)
+ * */
+function getOrderInfo(bytes32 bq_hash, bytes32 od_hash, bool is_sell);
+
+/* 取消订单
+ * orderParam: order信息
+ * orderAddressSet: 订单地址集合
+ * */
+function cancelOrder(OrderParam orderParam, OrderAddressSet orderAddressSet);
+
+
+/* 获取订单参数中的data
+ * is_sell: true 为卖单, false 为买单
+ *
+ * 返回值：
+ * bytes32 data
+ * */
+function getConfigData(bool is_sell);
+
+/* 获取交易签名数据
+ * v: 签名v值
+ * r: 签名r值
+ * s: 签名s值
+ * signMethod: 签名方法, 0为eth.sign, 1为EIP712
+ *
+ * 返回值：
+ * OrderSignature 结构体
+ * */
+function getConfigSignature(bytes1 v,  bytes32 r, bytes32 s, uint8 signMethod);
+
+/* 设置配置数据
+ * key: 配置key
+ * value: 配置value
+ * */
+function setConfiguration(string key, string value);
+
+/* 删除配置数据
+ * key: 配置key
+ * */
+function delConfiguration(string key);
+
